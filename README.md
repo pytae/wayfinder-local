@@ -2,10 +2,10 @@
 
 Wayfinder Local is a local-first adaptation of Matthew Pocock's Wayfinder agent skill. It helps an agent navigate an effort too large or uncertain for one session by maintaining a shared map of decision tickets and resolving one decision at a time.
 
-This version adds deterministic map resumption with a stable slug:
+This version is installed independently from upstream Wayfinder and adds deterministic map resumption with a stable slug:
 
 ```text
-/wayfinder my-big-project
+/wayfinder-local my-big-project
 ```
 
 The agent resolves that slug directly to one canonical map, reads the map's declared tracker, and continues from the tracker's live state. It does not need a prose handoff document or a context-heavy prompt from the previous session.
@@ -21,6 +21,8 @@ The agent resolves that slug directly to one canonical map, reads the map's decl
 - Avoids SQLite and GitHub search during slug resolution.
 - Preserves Wayfinder's one-ticket-per-session planning workflow.
 - Does not prescribe a handoff document or special end-of-session prompt.
+
+Its skill identity is `wayfinder-local`, so it can coexist with an unmodified upstream skill named `wayfinder`.
 
 The resolver finds the map; it does not implement the issue tracker. Each project still defines its tracker-specific Wayfinding operations for maps, tickets, claims, dependencies, and frontier queries.
 
@@ -41,15 +43,15 @@ wayfinder-local/
 
 ## Installation
 
-Clone the repository into the skill directory used by your agent host. Keep the installed folder named `wayfinder` when the host derives `/wayfinder` from the directory name.
+Clone the repository into the skill directory used by your agent host. Keep the installed folder named `wayfinder-local` so its directory and `SKILL.md` identity agree.
 
 Example for a Windows agent-skills directory:
 
 ```powershell
-git clone https://github.com/wearyscary/wayfinder-local.git "$HOME\.agents\skills\wayfinder"
+git clone https://github.com/pytae/wayfinder-local.git "$HOME\.agents\skills\wayfinder-local"
 ```
 
-If you already have a `wayfinder` skill installed, preserve any changes you want to keep and replace it with this version.
+An upstream `wayfinder` installation can remain beside it. Invoke the local-first variant explicitly when you want slug-based local map resolution.
 
 ## Quick start
 
@@ -91,7 +93,7 @@ Use the tracker identifier defined by the project's Wayfinding operations. `loca
 Open a session at the project root and invoke:
 
 ```text
-/wayfinder my-big-project
+/wayfinder-local my-big-project
 ```
 
 The resolver returns the canonical map path and tracker before the agent loads tracker-specific tools or chooses a ticket.

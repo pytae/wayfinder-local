@@ -1,5 +1,5 @@
 interface:
-  display_name: "Wayfinder"
-  short_description: "Map a large effort as decision tickets"
+  display_name: "Wayfinder Local"
+  short_description: "Resume local Wayfinder maps by stable slug"
 policy:
   allow_implicit_invocation: false
