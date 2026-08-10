@@ -1,6 +1,6 @@
 ---
 name: wayfinder-local
-description: Plan and resume large multi-session efforts as decision-ticket maps, with deterministic local map resolution by stable slug. Use explicitly when a project stores Wayfinder maps locally or registers them through project aliases.
+description: Create and resume large multi-session efforts as local decision-ticket maps. Use explicitly with create, open, start, or begin to initialize a project; otherwise resolve and continue an existing map by stable slug.
 ---
 
 A loose idea has arrived — too big for one agent session, and wrapped in fog: the way from here to the **destination** isn't visible yet. Wayfinding is about finding that way, not charging at the destination. This skill charts the way as a **shared map** on the repo's issue tracker, then works its **decision tickets** — questions whose resolution is a decision, not slices of a build to execute — one at a time until the route is clear.
@@ -104,9 +104,26 @@ Out-of-scope work never graduates — the frontier stops at the destination — 
 
 Ruling something out of scope is a scoping act, not a step on the route. When a ticket that already exists turns out to sit past the destination — mis-scoped in while charting, or exposed by a resolution — **close it** (a closed ticket is unambiguously off the frontier) and leave one line in the **Out of scope** section: the gist plus why it's out of scope, linking the closed ticket. It stays out of **Decisions so far**, which records the route actually walked — a scope boundary isn't a step on it.
 
-## Resolve the map first
+## Choose create or continue
 
-Treat the invocation argument as a map reference. Run the bundled resolver from the project root before loading tracker tools:
+Default to **continue**. Select **create** only when the first word after the invocation is `create`, `open`, `start`, or `begin`; remove that verb before interpreting the remaining input.
+
+In create mode:
+
+- Treat one slug-shaped token as an explicit slug: `/wayfinder-local create noctas-docs-review`.
+- Otherwise treat the remaining text as the initial idea and derive the slug from it: `/wayfinder-local create Review and restructure the Noctas documentation`.
+- When the user clearly supplies both, preserve the explicit slug and the idea.
+- When neither a slug nor an idea remains, ask for the idea.
+
+Run the bundled creator from the project root. Omit `-Slug` when it should be derived from the idea:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File <wayfinder-skill>/scripts/create-map.ps1 -Slug '<slug>' -Idea '<idea>' -WorkspaceRoot (Get-Location).Path
+```
+
+The creator writes `data/wayfinder/<slug>/map.md` with `tracker: local-markdown`, a provisional destination, and the initial idea. It never overwrites an existing map. For `created`, run the resolver on the returned slug and continue to **Chart the map**. For `already-exists`, report the canonical path and ask whether to continue that map or choose another slug. For `invalid`, report the reason and correct the input.
+
+In continue mode, treat the invocation argument as a map reference. Run the bundled resolver from the project root before loading tracker tools:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File <wayfinder-skill>/scripts/resolve-map.ps1 -Reference '<argument>' -WorkspaceRoot (Get-Location).Path
@@ -132,18 +149,19 @@ An existing local map wins over tracker inference. A slug-resolved map must cont
 
 ## Invocation
 
-Two modes. Either way, **never resolve more than one ticket per session** — with the exception of research tickets.
+After create-or-continue routing, either chart a new map or work through an existing one. **Never resolve more than one ticket per session** — with the exception of research tickets.
 
 ### Chart the map
 
-User invokes with a loose idea.
+User enters create mode with a slug, an idea, or both.
 
-1. **Name the destination.** Run a `/grilling` and `/domain-modeling` session to pin down what this map is finding its way to — the spec, decision, or change. The destination fixes the scope, so it's settled first.
-2. **Map the frontier.** Grill again, **breadth-first** this time: fan out across the whole space rather than deep on any one thread, surfacing the open decisions and the first steps takeable now. **If this surfaces no fog** — the way to the destination is already clear, the whole journey small enough for one session — you don't need a map. Stop and ask the user how they'd like to proceed.
-3. **Create the map** (label `wayfinder:map`): assign a stable `slug` and explicit `tracker`, fill Destination and Notes, leave Decisions-so-far empty, and sketch the fog into **Not yet specified**. For local Markdown, write the canonical map to `data/wayfinder/<slug>/map.md`; use `.wayfinder/maps.json` only when an existing canonical path cannot follow that convention.
-4. **Create the tickets you can specify now** as child issues of the map — then wire blocking edges in a **second pass** (issues need ids before they can reference each other). Wiring sorts them into the frontier and the blocked; everything you can't yet specify stays in the fog — the **Not yet specified** section.
-5. **Fire the research subagents.** For each `research` ticket you just created, spin up a `/research` subagent to resolve it in parallel, capturing its findings on a throwaway `research/<name>` branch with a context pointer from the ticket.
-6. Stop — charting is one session's work; it hand-resolves nothing.
+1. **Load the initialized map.** Confirm the creator and resolver agree on its canonical path, slug, and tracker.
+2. **Name the destination.** Run a `/grilling` and `/domain-modeling` session to pin down what this map is finding its way to — the spec, decision, or change — then replace the provisional Destination. The destination fixes the scope, so settle it first.
+3. **Map the frontier.** Grill again, **breadth-first** this time: fan out across the whole space rather than deep on any one thread, surfacing the open decisions and the first steps takeable now. If this surfaces no fog, record the completed destination and stop without creating tickets.
+4. **Update the map** (label `wayfinder:map`): preserve its slug and tracker, fill Destination and Notes, leave Decisions-so-far empty, and sketch the fog into **Not yet specified**.
+5. **Create the tickets you can specify now** as child issues of the map — then wire blocking edges in a **second pass** (issues need ids before they can reference each other). Wiring sorts them into the frontier and the blocked; everything you can't yet specify stays in the fog — the **Not yet specified** section.
+6. **Fire the research subagents.** For each `research` ticket you just created, spin up a `/research` subagent to resolve it in parallel, capturing its findings on a throwaway `research/<name>` branch with a context pointer from the ticket.
+7. Stop — charting is one session's work; it hand-resolves nothing.
 
 ### Work through the map
 
