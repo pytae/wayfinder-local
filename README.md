@@ -66,17 +66,13 @@ From the project root, invoke:
 /wayfinder-local create my-big-project
 ```
 
-`open`, `start`, and `begin` are creation aliases:
-
-```text
-/wayfinder-local start my-big-project
-```
+`create` must be the first argument after the skill name. It is the only creation subcommand.
 
 The skill creates `data/wayfinder/my-big-project/map.md` with matching `slug` and `tracker: local-markdown` metadata, then begins charting the destination and frontier. Existing maps are never overwritten.
 
 ### Create from an idea
 
-Omit the slug and put the idea directly after the creation verb:
+Omit the slug and put the idea directly after the `create` subcommand:
 
 ```text
 /wayfinder-local create Review and restructure the Noctas documentation
@@ -86,13 +82,21 @@ The skill derives a stable kebab-case slug from the idea, creates the canonical 
 
 ### Continue an existing map
 
-Creation requires one of the four creation verbs. Without one, continuing is the default:
+Without the exact first-position `create` subcommand, continuing is the default:
 
 ```text
 /wayfinder-local my-big-project
 ```
 
 The resolver returns the canonical map path and tracker before the agent loads tracker-specific tools or chooses a ticket.
+
+The word `create` later in the prompt is ordinary task content inside the existing map:
+
+```text
+/wayfinder-local my-big-project create an implementation outline
+```
+
+This continues `my-big-project`; it does not create a new Wayfinder map. If no existing map can be resolved, the skill asks for a map reference rather than switching modes.
 
 ## Map aliases
 
@@ -143,6 +147,7 @@ The skill normally runs both scripts for the agent. To create a map yourself:
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass `
   -File "<wayfinder-skill>\scripts\create-map.ps1" `
+  -Intent create `
   -Slug "my-big-project" `
   -Idea "Review and restructure the project documentation" `
   -WorkspaceRoot "C:\path\to\project"

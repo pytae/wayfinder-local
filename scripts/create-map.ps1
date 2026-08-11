@@ -2,6 +2,10 @@
 param(
     [Parameter()]
     [AllowEmptyString()]
+    [string]$Intent = '',
+
+    [Parameter()]
+    [AllowEmptyString()]
     [string]$Slug = '',
 
     [Parameter()]
@@ -69,6 +73,14 @@ function ConvertTo-MapSlug {
     }
 
     return $candidate
+}
+
+if ($Intent -cne 'create') {
+    Write-Result -ExitCode 2 -Value @{
+        status = 'invalid'
+        reason = 'explicit-create-intent-required'
+        expected = '-Intent create'
+    }
 }
 
 $root = [System.IO.Path]::GetFullPath($WorkspaceRoot)

@@ -1,6 +1,6 @@
 ---
 name: wayfinder-local
-description: Create and resume large multi-session efforts as local decision-ticket maps. Use explicitly with create, open, start, or begin to initialize a project; otherwise resolve and continue an existing map by stable slug.
+description: Create and resume large multi-session efforts as local decision-ticket maps. The exact first argument `create` initializes a project; every other invocation resolves and continues an existing map by stable slug.
 ---
 
 A loose idea has arrived — too big for one agent session, and wrapped in fog: the way from here to the **destination** isn't visible yet. Wayfinding is about finding that way, not charging at the destination. This skill charts the way as a **shared map** on the repo's issue tracker, then works its **decision tickets** — questions whose resolution is a decision, not slices of a build to execute — one at a time until the route is clear.
@@ -106,7 +106,12 @@ Ruling something out of scope is a scoping act, not a step on the route. When a 
 
 ## Choose create or continue
 
-Default to **continue**. Select **create** only when the first word after the invocation is `create`, `open`, `start`, or `begin`; remove that verb before interpreting the remaining input.
+Parse the first positional token immediately after `/wayfinder-local` (or `$wayfinder-local`):
+
+- Exact token `create`: select **create** and remove that token before interpreting the remaining input.
+- Every other token: select **continue** and preserve the entire remaining prompt as work within an existing map.
+
+Creation is a command boundary, not an inferred intent. A later use of the word `create` remains continue-mode task content. For example, `/wayfinder-local noctas-docs-review create an implementation outline` continues `noctas-docs-review`; it does not initialize another map. If continue mode has no resolvable map reference, ask for one instead of falling through to create mode.
 
 In create mode:
 
@@ -118,10 +123,10 @@ In create mode:
 Run the bundled creator from the project root. Omit `-Slug` when it should be derived from the idea:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File <wayfinder-skill>/scripts/create-map.ps1 -Slug '<slug>' -Idea '<idea>' -WorkspaceRoot (Get-Location).Path
+powershell -NoProfile -ExecutionPolicy Bypass -File <wayfinder-skill>/scripts/create-map.ps1 -Intent create -Slug '<slug>' -Idea '<idea>' -WorkspaceRoot (Get-Location).Path
 ```
 
-The creator writes `data/wayfinder/<slug>/map.md` with `tracker: local-markdown`, a provisional destination, and the initial idea. It never overwrites an existing map. For `created`, run the resolver on the returned slug and continue to **Chart the map**. For `already-exists`, report the canonical path and ask whether to continue that map or choose another slug. For `invalid`, report the reason and correct the input.
+The creator requires the exact `-Intent create` guard, writes `data/wayfinder/<slug>/map.md` with `tracker: local-markdown`, a provisional destination, and the initial idea, and never overwrites an existing map. For `created`, run the resolver on the returned slug and continue to **Chart the map**. For `already-exists`, report the canonical path and ask whether to continue that map or choose another slug. For `invalid`, report the reason and correct the input.
 
 In continue mode, treat the invocation argument as a map reference. Run the bundled resolver from the project root before loading tracker tools:
 
