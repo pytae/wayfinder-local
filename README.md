@@ -15,6 +15,7 @@ The agent resolves that slug directly to one canonical map, reads the map's decl
 - Adds required `slug` and `tracker` metadata to every map.
 - Defines `data/wayfinder/<slug>/map.md` as the preferred local Markdown location.
 - Bundles a deterministic PowerShell resolver.
+- Creates canonical map folders and starter maps from an explicit slug or an idea.
 - Supports project-level aliases in `.wayfinder/maps.json`.
 - Checks local paths directly, including files hidden by `.gitignore`.
 - Reports missing, invalid, or ambiguous maps instead of guessing a tracker.
@@ -34,11 +35,13 @@ wayfinder-local/
 |-- agents/
 |   `-- openai.yaml
 `-- scripts/
+    |-- create-map.ps1
     `-- resolve-map.ps1
 ```
 
 - `SKILL.md` contains the Wayfinder workflow and resolution contract.
 - `agents/openai.yaml` provides Codex-facing display metadata.
+- `scripts/create-map.ps1` creates a canonical local map without overwriting one.
 - `scripts/resolve-map.ps1` resolves a slug, path, URL, or issue number.
 
 ## Installation
@@ -55,48 +58,45 @@ An upstream `wayfinder` installation can remain beside it. Invoke the local-firs
 
 ## Quick start
 
-### 1. Create a canonical map
+### Create with a slug
 
-From the project root, create:
+From the project root, invoke:
 
 ```text
-data/wayfinder/my-big-project/map.md
+/wayfinder-local create my-big-project
 ```
 
-Start it with matching metadata:
+`create` must be the first argument after the skill name. It is the only creation subcommand.
 
-```markdown
----
-slug: my-big-project
-tracker: local-markdown
----
+The skill creates `data/wayfinder/my-big-project/map.md` with matching `slug` and `tracker: local-markdown` metadata, then begins charting the destination and frontier. Existing maps are never overwritten.
 
-## Destination
+### Create from an idea
 
-Describe what reaching the end of this map means.
+Omit the slug and put the idea directly after the `create` subcommand:
 
-## Notes
-
-Record standing preferences, domain context, and skills each session should consult.
-
-## Decisions so far
-
-## Not yet specified
-
-## Out of scope
+```text
+/wayfinder-local create Review and restructure the Noctas documentation
 ```
 
-Use the tracker identifier defined by the project's Wayfinding operations. `local-markdown` is appropriate only when the project uses that tracker.
+The skill derives a stable kebab-case slug from the idea, creates the canonical folder and map, and records the original idea in the map's Notes. If neither a slug nor an idea is supplied, it asks for the idea.
 
-### 2. Resume by slug
+### Continue an existing map
 
-Open a session at the project root and invoke:
+Without the exact first-position `create` subcommand, continuing is the default:
 
 ```text
 /wayfinder-local my-big-project
 ```
 
 The resolver returns the canonical map path and tracker before the agent loads tracker-specific tools or chooses a ticket.
+
+The word `create` later in the prompt is ordinary task content inside the existing map:
+
+```text
+/wayfinder-local my-big-project create an implementation outline
+```
+
+This continues `my-big-project`; it does not create a new Wayfinder map. If no existing map can be resolved, the skill asks for a map reference rather than switching modes.
 
 ## Map aliases
 
@@ -140,9 +140,22 @@ The resolver also accepts:
 
 Slug resolution requires lowercase letters, digits, and hyphens, with a maximum length of 64 characters.
 
-## Run the resolver directly
+## Run the scripts directly
 
-The skill normally runs the resolver for the agent. To inspect resolution yourself:
+The skill normally runs both scripts for the agent. To create a map yourself:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass `
+  -File "<wayfinder-skill>\scripts\create-map.ps1" `
+  -Intent create `
+  -Slug "my-big-project" `
+  -Idea "Review and restructure the project documentation" `
+  -WorkspaceRoot "C:\path\to\project"
+```
+
+Omit `-Slug` to derive it from `-Idea`. The creator emits JSON with `created`, `already-exists`, or `invalid` status.
+
+To inspect resolution:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass `
